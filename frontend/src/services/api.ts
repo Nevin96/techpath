@@ -6,6 +6,7 @@ import type {
   CareerPathResponse,
   GraphResponse,
   RecommendationResponse,
+  CareerLearningPathResponse,
 } from "../types";
 
 const api = axios.create({
@@ -81,6 +82,17 @@ export async function getRecommendations(
   const response = await api.get<RecommendationResponse>(
     `/api/skills/${encodeURIComponent(skillName)}/recommendations`
   );
+
+  return response.data;
+}
+export async function getLearningPath(
+  skillName: string,
+  jobName: string
+): Promise<CareerLearningPathResponse> {
+  const response =
+    await api.get<CareerLearningPathResponse>(
+      `/api/skills/${encodeURIComponent(skillName)}/learning-path/${encodeURIComponent(jobName)}`
+    );
 
   return response.data;
 }

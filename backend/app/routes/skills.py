@@ -6,6 +6,7 @@ from app.models.schemas import (
     CareerPathResponse,
     GraphResponse,
     RecommendationResponse,
+    CareerLearningPathResponse,
 )
 from app.services.graph_service import GraphService
 
@@ -132,3 +133,35 @@ def get_recommendations(skill_name: str):
         "skill": skill["name"],
         "recommendations": recommendations,
     }
+@router.get(
+    "/{skill_name}/learning-path/{job_name}",
+    response_model=CareerLearningPathResponse
+)
+def get_learning_path(
+    skill_name: str,
+    job_name: str
+):
+
+    skill = service.get_skill(skill_name)
+
+    if skill is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Skill '{skill_name}' not found"
+        )
+
+    result = service.get_learning_path(
+        skill_name,
+        job_name
+    )
+
+    if result is None:
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                f"No learning path found from "
+                f"'{skill_name}' to '{job_name}'"
+            )
+        )
+
+    return result

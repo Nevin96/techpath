@@ -7,10 +7,14 @@ import {
   getRelatedSkills,
   getJobsForSkill,
   getRecommendations,
+  getLearningPath,
+  getCareerPaths,
 } from "../services/api";
 
 import type {
   RecommendationResponse,
+  CareerLearningPathResponse,
+  CareerPathResponse,
 } from "../types";
 import type { Skill, Job } from "../types";
 
@@ -25,30 +29,44 @@ function SkillPage() {
   const [recommendations, setRecommendations] = useState<RecommendationResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-
-  useEffect(() => {
-    async function loadSkill() {
-      if (!skillName) {
-        return;
-      }
+  const [careerPaths, setCareerPaths] =useState<CareerPathResponse | null>(null);
+  const [learningPath, setLearningPath] =useState<CareerLearningPathResponse | null>(null);
+  const [selectedCareer, setSelectedCareer] =useState<string | null>(null);
+  const [pathLoading, setPathLoading] =useState(false);
+  const careerDestinations = careerPaths
+      ? Array.from(
+          new Map(
+            careerPaths.paths.map((path) => [
+              path.job,
+              path,
+            ])
+          ).values()
+        )
+      : [];
+      useEffect(() => {
+        async function loadSkill() {
+          if (!skillName) {
+            return;
+          }
 
       try {
         setLoading(true);
         setError(null);
 
-        const [skillData, relatedData, jobsData,recommendationData] =
+        const [skillData, relatedData, jobsData,recommendationData,careerPathData] =
           await Promise.all([
             getSkill(skillName),
             getRelatedSkills(skillName),
             getJobsForSkill(skillName),
             getRecommendations(skillName),
+            getCareerPaths(skillName),
           ]);
 
         setSkill(skillData);
         setRelatedSkills(relatedData);
         setJobs(jobsData);
         setRecommendations(recommendationData);
+        setCareerPaths(careerPathData);
 
       } catch (error) {
         console.error(error);
@@ -258,7 +276,100 @@ function SkillPage() {
   )}
 
 </section>
+<section className="mt-16">
 
+  <div className="mb-6">
+
+    <p className="text-sm font-semibold uppercase tracking-wider text-indigo-600">
+      Career destination
+    </p>
+
+    <h2 className="mt-2 text-2xl font-bold text-slate-950">
+      Where do you want to go?
+    </h2>
+
+    <p className="mt-2 max-w-2xl text-slate-500">
+      Choose a career and TechPath will find a learning path
+      from {skill.name}.
+    </p>
+
+  </div>
+
+
+  {careerDestinations.length === 0 ? (
+
+    <div className="rounded-2xl border border-slate-200 bg-white p-8 text-slate-500">
+      No career destinations found.
+    </div>
+
+  ) : (
+
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+
+      {careerDestinations.map((career) => (
+
+        <button
+          key={career.job}
+          onClick={async () => {
+
+            try {
+
+              setPathLoading(true);
+              setSelectedCareer(career.job);
+
+              const path =
+                await getLearningPath(
+                  skill.name,
+                  career.job
+                );
+
+              setLearningPath(path);
+
+            } catch (error) {
+
+              console.error(error);
+
+              setLearningPath(null);
+
+            } finally {
+
+              setPathLoading(false);
+
+            }
+
+          }}
+          className={`rounded-2xl border bg-white p-6 text-left transition hover:-translate-y-1 hover:shadow-lg ${
+            selectedCareer === career.job
+              ? "border-indigo-500 ring-2 ring-indigo-100"
+              : "border-slate-200 hover:border-indigo-200"
+          }`}
+        >
+
+          <div className="flex items-center justify-between">
+
+            <h3 className="font-semibold text-slate-900">
+              {career.job}
+            </h3>
+
+            <span className="text-slate-400">
+              →
+            </span>
+
+          </div>
+
+          <p className="mt-3 text-sm text-slate-500">
+            {career.distance} learning steps
+          </p>
+
+        </button>
+
+      ))}
+
+    </div>
+
+  )}
+
+</section>
       {/* Career Opportunities */}
 
       <section className="mt-16">
@@ -308,11 +419,106 @@ function SkillPage() {
           </div>
 
         )}
-
+        
       </section>
 
 
       {/* Career Path CTA */}
+      {selectedCareer && (
+
+  <section className="mt-10 rounded-3xl bg-slate-950 p-8 text-white md:p-10">
+
+    <div className="flex items-start justify-between">
+
+      <div>
+
+        <p className="text-sm font-semibold uppercase tracking-wider text-indigo-300">
+          Your learning path
+        </p>
+
+        <h2 className="mt-2 text-2xl font-bold">
+          {skill.name} → {selectedCareer}
+        </h2>
+
+      </div>
+
+      {!pathLoading && learningPath && (
+
+        <div className="rounded-full bg-white/10 px-4 py-2 text-sm text-slate-300">
+          {learningPath.distance} steps
+        </div>
+
+      )}
+
+    </div>
+
+
+    {pathLoading ? (
+
+      <div className="mt-8 animate-pulse">
+
+        <div className="h-6 w-48 rounded bg-white/10" />
+
+        <div className="mt-6 h-4 w-full rounded bg-white/10" />
+
+      </div>
+
+    ) : learningPath ? (
+
+      <div className="mt-10">
+
+        <div className="flex flex-wrap items-center gap-3">
+
+          {learningPath.path.map(
+            (node, index) => (
+
+              <div
+                key={`${node}-${index}`}
+                className="flex items-center gap-3"
+              >
+
+                <div
+                  className={`rounded-xl px-5 py-3 font-semibold ${
+                    index === 0
+                      ? "bg-indigo-500 text-white"
+                      : index === learningPath.path.length - 1
+                        ? "bg-emerald-500 text-white"
+                        : "bg-white/10 text-slate-200"
+                  }`}
+                >
+                  {node}
+                </div>
+
+
+                {index <
+                  learningPath.path.length - 1 && (
+
+                  <span className="text-xl text-slate-500">
+                    →
+                  </span>
+
+                )}
+
+              </div>
+
+            )
+          )}
+
+        </div>
+
+      </div>
+
+    ) : (
+
+      <p className="mt-8 text-slate-400">
+        No learning path was found for this career.
+      </p>
+
+    )}
+
+  </section>
+
+)}
 
       <section className="mt-16 rounded-3xl bg-slate-950 p-8 text-white md:p-12">
 

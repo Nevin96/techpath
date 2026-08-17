@@ -61,3 +61,9 @@ export interface RecommendationResponse {
   skill: string;
   recommendations: SkillRecommendation[];
 }
+export interface CareerLearningPathResponse {
+  skill: string;
+  job: string;
+  path: string[];
+  distance: number;
+}

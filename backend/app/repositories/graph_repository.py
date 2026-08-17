@@ -289,3 +289,48 @@ class GraphRepository:
                 record.data()
                 for record in result
             ]
+    def get_learning_path(self,skill_name: str,job_name: str):
+        query = """
+        MATCH (start:Skill)
+        WHERE toLower(start.name) = toLower($skill_name)
+
+        MATCH (job:Job)
+        WHERE toLower(job.title) = toLower($job_name)
+
+        MATCH p =
+            shortestPath(
+                (start)-[:PREREQUISITE_OF|REQUIRED_FOR*1..8]->(job)
+            )
+
+        RETURN
+            [node IN nodes(p) |
+                CASE
+                    WHEN node:Job THEN node.title
+                    ELSE node.name
+                END
+            ] AS path,
+
+            length(p) AS distance
+        """
+
+        with self.driver.session(
+            database=self.database
+        ) as session:
+
+            result = session.run(
+                query,
+                skill_name=skill_name,
+                job_name=job_name
+            )
+
+            record = result.single()
+
+            if record is None:
+                return None
+
+            return {
+                "skill": skill_name,
+                "job": job_name,
+                "path": record["path"],
+                "distance": record["distance"]
+            }

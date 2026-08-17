@@ -24,3 +24,5 @@ class GraphService:
         return self.repository.get_graph(skill_name)
     def get_recommendations(self, skill_name: str):
         return self.repository.get_recommendations(skill_name)
+    def get_learning_path(self,skill_name: str,job_name: str):
+        return self.repository.get_learning_path(skill_name,job_name)
