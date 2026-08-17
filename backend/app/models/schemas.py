@@ -50,11 +50,6 @@ class RecommendationResponse(BaseModel):
     skill: str
     recommendations: list[SkillRecommendation]
 
-class CareerLearningPathResponse(BaseModel):
-    skill: str
-    job: str
-    path: list[str]
-    distance: int
 class LearningPathNode(BaseModel):
     name: str
     type: str

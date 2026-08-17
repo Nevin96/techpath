@@ -303,11 +303,29 @@ class GraphRepository:
             )
 
         RETURN
-            [node IN nodes(p) |
-                CASE
-                    WHEN node:Job THEN node.title
-                    ELSE node.name
-                END
+            [
+                node IN nodes(p) |
+                {
+                    name:
+                        CASE
+                            WHEN node:Job THEN node.title
+                            ELSE node.name
+                        END,
+
+                    type:
+                        CASE
+                            WHEN node:Job THEN "job"
+                            ELSE "skill"
+                        END,
+
+                    description: node.description,
+
+                    difficulty:
+                        CASE
+                            WHEN node:Job THEN null
+                            ELSE node.difficulty
+                        END
+                }
             ] AS path,
 
             length(p) AS distance

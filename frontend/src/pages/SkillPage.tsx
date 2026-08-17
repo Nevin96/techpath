@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import RecommendationCard from "../components/RecommendationCard";
+import LearningPath from "../components/LearningPath";
 
 import {
   getSkill,
@@ -25,7 +26,6 @@ function SkillPage() {
   const [skill, setSkill] = useState<Skill | null>(null);
   const [relatedSkills, setRelatedSkills] = useState<Skill[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
-
   const [recommendations, setRecommendations] = useState<RecommendationResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,16 +33,32 @@ function SkillPage() {
   const [learningPath, setLearningPath] =useState<CareerLearningPathResponse | null>(null);
   const [selectedCareer, setSelectedCareer] =useState<string | null>(null);
   const [pathLoading, setPathLoading] =useState(false);
-  const careerDestinations = careerPaths
-      ? Array.from(
+  const [completedSkills, setCompletedSkills] =useState<Set<string>>(new Set());
+  const nextSkill = learningPath?.path.find(
+    (node) =>node.type === "skill" &&
+    !completedSkills.has(node.name));
+  const careerDestinations = careerPaths? Array.from(
           new Map(
             careerPaths.paths.map((path) => [
               path.job,
               path,
             ])
           ).values()
-        )
-      : [];
+        ): [];
+  function toggleSkill(skillName: string) {
+  setCompletedSkills((previous) => {
+
+    const next = new Set(previous);
+
+    if (next.has(skillName)) {
+      next.delete(skillName);
+    } else {
+      next.add(skillName);
+    }
+
+    return next;
+  });
+}
       useEffect(() => {
         async function loadSkill() {
           if (!skillName) {
@@ -452,7 +468,6 @@ function SkillPage() {
 
     </div>
 
-
     {pathLoading ? (
 
       <div className="mt-8 animate-pulse">
@@ -464,50 +479,36 @@ function SkillPage() {
       </div>
 
     ) : learningPath ? (
+      <>
 
-      <div className="mt-10">
+    {nextSkill && (
+      <div className="mb-8 rounded-2xl border border-indigo-500/20 bg-indigo-500/10 p-6">
 
-        <div className="flex flex-wrap items-center gap-3">
+        <p className="text-xs font-semibold uppercase tracking-wider text-indigo-300">
+          Your next step
+        </p>
 
-          {learningPath.path.map(
-            (node, index) => (
+        <h3 className="mt-2 text-xl font-bold text-white">
+          Learn {nextSkill.name}
+        </h3>
 
-              <div
-                key={`${node}-${index}`}
-                className="flex items-center gap-3"
-              >
-
-                <div
-                  className={`rounded-xl px-5 py-3 font-semibold ${
-                    index === 0
-                      ? "bg-indigo-500 text-white"
-                      : index === learningPath.path.length - 1
-                        ? "bg-emerald-500 text-white"
-                        : "bg-white/10 text-slate-200"
-                  }`}
-                >
-                  {node}
-                </div>
-
-
-                {index <
-                  learningPath.path.length - 1 && (
-
-                  <span className="text-xl text-slate-500">
-                    →
-                  </span>
-
-                )}
-
-              </div>
-
-            )
-          )}
-
-        </div>
+        {nextSkill.description && (
+          <p className="mt-2 text-sm leading-6 text-slate-400">
+            {nextSkill.description}
+          </p>
+        )}
 
       </div>
+    )}
+      
 
+  <LearningPath
+  learningPath={learningPath}
+  completedSkills={completedSkills}
+  onToggleSkill={toggleSkill}
+/>
+
+</>
     ) : (
 
       <p className="mt-8 text-slate-400">

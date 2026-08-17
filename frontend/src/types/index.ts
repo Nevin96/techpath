@@ -61,9 +61,17 @@ export interface RecommendationResponse {
   skill: string;
   recommendations: SkillRecommendation[];
 }
+export interface LearningPathNode {
+  name: string;
+  type: "skill" | "job";
+  description?: string | null;
+  difficulty?: string | null;
+}
+
+
 export interface CareerLearningPathResponse {
   skill: string;
   job: string;
-  path: string[];
+  path: LearningPathNode[];
   distance: number;
 }
