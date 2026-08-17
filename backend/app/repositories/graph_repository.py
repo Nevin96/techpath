@@ -17,7 +17,7 @@ class GraphRepository:
         ORDER BY s.name
         """
 
-        with self.driver.session(database=COGNODB_DATABASE) as session:
+        with self.driver.session(database=self.database) as session:
             result = session.run(query)
 
             return [record.data() for record in result]
